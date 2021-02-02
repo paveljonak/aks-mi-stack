@@ -1,0 +1,62 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "locationShortName": {
+            "value": "ci"
+        },          
+        "enableRBAC": {
+            "value": true
+        },
+        "kubernetesVersion": {
+            "value": "1.19.3"
+        },          
+        "enableOmsAgent": {
+            "value": true
+        },
+        "enableHttpApplicationRouting": {
+            "value": false
+        },
+        "networkPlugin": {
+            "value": "azure"
+        },
+        "loadBalancerSku": {
+            "value": "Standard"
+        },
+        "controlPlaneSku": {
+            "value": "Paid"
+        },
+        "serviceCidr": {
+            "value": "10.10.0.0/16"
+        },
+        "dnsServiceIP": {
+            "value": "10.10.0.10"
+        },
+        "dockerBridgeCidr": {
+            "value": "172.17.0.1/16"
+        },
+        "agentPoolProfiles": {
+            "value": [
+                {
+                    "name": "systempool1",
+                    "nodeCount": 2,
+                    "nodeVmSize": "Standard_D4as_v4",
+                    "osType": "Linux",
+                    "maxPods": 30,
+                    "osDiskSizeGB": 32,
+                    "enableAutoScaling": false,
+                    "maxCount": 1,
+                    "minCount": 3,
+                    "mode": "System",
+                    "nodeTaints": [],
+                    "nodeLabels": {
+                        "environment": "blue"
+                    }
+                }
+            ]
+        },
+        "userNodePoolProfiles": {
+            "value": []
+        }
+    }
+  }

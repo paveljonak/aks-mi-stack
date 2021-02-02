@@ -1,0 +1,363 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "aksName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the project."
+            }
+        },
+        "projectName": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the project."
+            }
+        },
+        "environment": {
+            "type": "string",
+            "metadata": {
+                "description": "The name of the environment."
+            }
+        },
+        "locationShortName": {
+            "type": "string",
+            "defaultValue": "we",
+            "metadata": {
+                "description": "The short name of DC location."
+            }
+        },
+        "slotName": {
+            "type": "string",
+            "defaultValue": "aks",
+            "metadata": {
+                "description": "The name of the Managed Cluster resource."
+            }
+        },
+        "nameDelimiter": {
+            "type": "string",
+            "defaultValue": "-",
+            "metadata": {
+                "description": "Delimiter string for names"
+            }
+        },
+        "kubernetesVersion": {
+            "type": "string",
+            "defaultValue": "1.19.3",
+            "metadata": {
+                "description": "The version of Kubernetes."
+            }
+        },
+        "enableRBAC": {
+            "type": "bool",
+            "defaultValue": "true",
+            "metadata": {
+                "description": "Whether to enable Kubernetes Role-Based Access Control."
+            }
+        },
+        "adminGroupObjectIDs": {
+            "metadata": {
+                "description": "Admin Group Object IDs."
+            },
+            "type": "string"
+        },
+        "enableOmsAgent": {
+            "type": "bool",
+            "defaultValue": "false",
+            "metadata": {
+                "description": "boolean flag to turn on and off of omsagent addon"
+            }
+        },
+        "enableHttpApplicationRouting": {
+            "type": "bool",
+            "defaultValue": "false",
+            "metadata": {
+                "description": "boolean flag to turn on and off of http application routing"
+            }
+        },
+        "networkPlugin": {
+            "type": "string",
+            "defaultValue": "azure",
+            "metadata": {
+                "description": "Network plugin used for building Kubernetes network."
+            }
+        },
+        "serviceCidr": {
+            "type": "string",
+            "defaultValue": "10.0.0.0/16",
+            "metadata": {
+                "description": "A CIDR notation IP range from which to assign service cluster IPs."
+            }
+        },
+        "dnsServiceIP": {
+            "type": "string",
+            "defaultValue": "10.0.0.10",
+            "metadata": {
+                "description": "Containers DNS server IP address."
+            }
+        },
+        "dockerBridgeCidr": {
+            "type": "string",
+            "defaultValue": "172.17.0.1/16",
+            "metadata": {
+                "description": "A CIDR notation IP for Docker bridge."
+            }
+        },
+        "linuxAdminUsername": {
+            "type": "string",
+            "metadata": {
+                "description": "The username admin of node."
+            }
+        },
+        "sshRSAPublicKey": {
+            "type": "string",
+            "metadata": {
+                "description": "The user admin password of node."
+            }
+        },
+        "networkPolicy": {
+            "type": "string",
+            "defaultValue": "azure",
+            "metadata": {
+                "description": "The network policy."
+            }
+        },
+        "agentPoolProfiles": {
+            "type": "array",
+            "metadata": {
+                "description": "Define one or multiple System node pools"
+            },
+            "defaultValue": [
+                {
+                    "name": "systempool",
+                    "nodeCount": 2,
+                    "nodeVmSize": "Standard_B4ms",
+                    "osType": "Linux",
+                    "maxPods": 30,
+                    "osDiskSizeGB": 32,
+                    "enableAutoScaling": false,
+                    "maxCount": 1,
+                    "minCount": 3,
+                    "mode": "System",
+                    "nodeTaints": [],
+                    "nodeLabels": {
+                        "environment": "dev"
+                    }
+                }
+            ]
+        },
+        "userNodePoolProfiles": {
+            "type": "array",
+            "metadata": {
+                "description": "Define one or multiple User node pools"
+            },
+            "defaultValue": [
+                // {
+                //     "nodeCount": 1,
+                //     "nodeVmSize": "Standard_B2ms",
+                //     "osType": "Linux",
+                //     "maxPods": 30,
+                //     "osDiskSizeGB": 32,
+                //     "enableAutoScaling": false,
+                //     "maxCount": 1,
+                //     "minCount": 3,
+                //     "mode": "User",
+                //     "nodeTaints": [],
+                //     "nodeLabels": {
+                //         "environment": "dev"
+                //     }
+                // }
+            ]
+        },
+        "controlPlaneSku": {
+            "type": "string",
+            "metadata": {
+                "description": "Free or SLA covered control plane mode"
+            },
+            "allowedValues": [
+                "Free",
+                "Paid"
+            ],
+            "defaultValue": "Free"
+        },
+        "aksPolicy": {
+            "type": "bool",
+            "metadata": {
+                "description": "Enable the AKS Azure Policy add-on"
+            },
+            "defaultValue": false
+        },      
+        "loadBalancerSku": {
+            "type": "string",
+            "metadata": {
+                "description": "loadBalancer Sku."
+            },
+            "defaultValue": "Basic"
+        },
+        "ipWhitelist": {
+            "type": "array",
+            "metadata": {
+                "description": "Whitelist IP address to limit access the AKS API server endpoint"
+            },
+            "defaultValue": []
+        },
+        "privateCluster": {
+            "type": "bool",
+            "metadata": {
+                "description": "AKS API server endpoint as private."
+            },
+            "defaultValue": false
+        }
+    },
+    "variables": {
+        "aksResourceFullName": "[concat(parameters('projectName'), parameters('nameDelimiter'), parameters('environment'), parameters('nameDelimiter'), parameters('locationShortName'), parameters('nameDelimiter'), parameters('aksName'), parameters('nameDelimiter'), parameters('slotName'))]",
+        "workspaceId": "[resourceId(variables('logWorkspaceResourceGroup'), 'Microsoft.OperationalInsights/workspaces', variables('logWorkspaceName'))]",
+        "vNetSubnetResourceGroup": "[resourceGroup().name]",
+        "vNetName": "[concat(variables('aksResourceFullName'), parameters('nameDelimiter'), 'vnet')]",
+        "subnetName": "[concat(variables('aksResourceFullName'), parameters('nameDelimiter'), 'subnet')]",
+        "logWorkspaceResourceGroup": "[concat(variables('aksResourceFullName'), parameters('nameDelimiter'), 'law', parameters('nameDelimiter'), 'rg')]",
+        "logWorkspaceName": "[concat(variables('aksResourceFullName'), parameters('nameDelimiter'), 'law')]",
+        "agentPoolProfiles": {
+            "vnetSubnetId": "[resourceId(variables('vNetSubnetResourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', variables('vNetName'), variables('subnetName'))]"
+        },
+        "userNodePoolProfiles": {
+            "vnetSubnetId": "[resourceId(variables('vNetSubnetResourceGroup'), 'Microsoft.Network/virtualNetworks/subnets', variables('vNetName'), variables('subnetName'))]"
+        }
+    },
+    "resources": [
+        {
+            "type": "Microsoft.ContainerService/managedClusters",
+            "apiVersion": "2020-11-01",
+            "name": "[variables('aksResourceFullName')]",
+            "location": "[resourceGroup().location]",
+            "tags": { },
+            "properties": {
+                "kubernetesVersion": "[parameters('kubernetesVersion')]",
+                "enableRBAC": "[parameters('enableRBAC')]",
+                "dnsPrefix": "[concat(variables('aksResourceFullName'), parameters('nameDelimiter'), 'dns')]",
+                "nodeResourceGroup": "[concat(variables('aksResourceFullName'), parameters('nameDelimiter'), 'nodes', parameters('nameDelimiter'), 'rg')]",
+                "copy": [
+                    {
+                        "name": "agentPoolProfiles",
+                        "count": "[length(parameters('agentPoolProfiles'))]",
+                        "input": {
+                            "name": "[concat(variables('aksResourceFullName'),'/nodepool',add(copyIndex('agentPoolProfiles'),1))]",
+                            "orchestratorVersion": "[parameters('kubernetesVersion')]",
+                            "maxPods": "[parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].maxPods]",
+                            "osDiskSizeGB": "[parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].osDiskSizeGB]",
+                            "count": "[parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].nodeCount]",
+                            "vmSize": "[parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].nodeVmSize]",
+                            "osType": "[parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].osType]",
+                            "vnetSubnetID": "[variables('agentPoolProfiles').vNetSubnetId]",
+                            "enableAutoScaling": "[if(parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].enableAutoScaling, parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].enableAutoScaling, json('null'))]",
+                            "maxCount": "[if(parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].enableAutoScaling, parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].maxCount, json('null'))]",
+                            "minCount": "[if(parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].enableAutoScaling, parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].minCount, json('null'))]",
+                            "type": "VirtualMachineScaleSets",
+                            "mode": "[parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].mode]",
+                            "enableNodePublicIP": false,
+                            "nodeLabels": "[parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].nodeLabels]",
+                            "nodeTaints": "[parameters('agentPoolProfiles')[copyIndex('agentPoolProfiles')].nodeTaints]"
+                        }
+                    }
+                ],
+                "linuxProfile": {
+                    "adminUsername": "[parameters('linuxAdminUsername')]",
+                    "ssh": {
+                        "publicKeys": [
+                            {
+                                "keyData": "[parameters('sshRSAPublicKey')]"
+                            }
+                        ]
+                    }
+                },
+                "servicePrincipalProfile": {
+                    "clientId": "msi"
+                },
+                "addonProfiles": {
+                    "kubeDashboard": {
+                        "enabled": false
+                    },
+                    "httpApplicationRouting": {
+                        "enabled": "[parameters('enableHttpApplicationRouting')]"
+                    },
+                    "omsagent": {
+                        "enabled": "[parameters('enableOmsAgent')]",
+                        "config": {
+                            "logAnalyticsWorkspaceResourceID": "[variables('workspaceId')]"
+                        }
+                    },
+                    "azurepolicy": {
+                        "enabled": "[parameters('aksPolicy')]",
+                        "config": {
+                            "version": "v2"
+                        }
+                    }
+                },
+                "networkProfile": {
+                    "networkPlugin": "[parameters('networkPlugin')]",
+                    "networkPolicy": "[parameters('networkPolicy')]",
+                    "serviceCidr": "[parameters('serviceCidr')]",
+                    "dnsServiceIP": "[parameters('dnsServiceIP')]",
+                    "dockerBridgeCidr": "[parameters('dockerBridgeCidr')]",
+                    "loadBalancerSku": "[parameters('loadBalancerSku')]"
+                },
+                "aadProfile": {
+                    "managed": true,
+                    "adminGroupObjectIDs": [
+                        "[parameters('adminGroupObjectIDs')]"
+                    ],
+                    "tenantID": "[subscription().tenantId]"
+                },
+                "apiServerAccessProfile": {
+                    "authorizedIPRanges": "[if(parameters('privateCluster'), json('[]'), parameters('ipWhitelist'))]",
+                    "enablePrivateCluster": "[parameters('privateCluster')]"
+                }
+            },
+            "sku": {
+                "name": "Basic",
+                "tier": "[parameters('controlPlaneSku')]"
+            },
+            "identity": {
+                "type": "SystemAssigned"
+            },
+            "resources": []
+        },
+        {
+            "type": "Microsoft.ContainerService/managedClusters/agentPools",
+            "apiVersion": "2020-11-01",
+
+            "name": "[concat(variables('aksResourceFullName'),'/nodepool',add(copyIndex('userNodePoolProfiles'),1))]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.ContainerService/managedClusters', variables('aksResourceFullName'))]"
+            ],
+            "copy": {
+                "name": "userNodePoolProfiles",
+                "count": "[length(parameters('userNodePoolProfiles'))]"
+            },
+            "properties": {
+                "orchestratorVersion": "[parameters('kubernetesVersion')]",
+                "maxPods": "[parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].maxPods]",
+                "osDiskSizeGB": "[parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].osDiskSizeGB]",
+                "count": "[parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].nodeCount]",
+                "vmSize": "[parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].nodeVmSize]",
+                "osType": "[parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].osType]",
+                "vnetSubnetID": "[variables('userNodePoolProfiles').vNetSubnetId]",
+                "enableAutoScaling": "[if(parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].enableAutoScaling, parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].enableAutoScaling, json('null'))]",
+                "maxCount": "[if(parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].enableAutoScaling, parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].maxCount, json('null'))]",
+                "minCount": "[if(parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].enableAutoScaling, parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].minCount, json('null'))]",
+                "type": "VirtualMachineScaleSets",
+                "mode": "[parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].mode]",
+                "enableNodePublicIP": false,
+                "nodeLabels": "[parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].nodeLabels]",
+                "nodeTaints": "[parameters('userNodePoolProfiles')[copyIndex('userNodePoolProfiles')].nodeTaints]"
+            }
+        }
+    ],
+    "outputs": {
+        "aksFullName" : {
+            "type": "string",
+            "value": "[variables('aksResourceFullName')]"
+        }
+    }
+}
