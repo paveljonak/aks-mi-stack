@@ -40,11 +40,6 @@ The focus is on deploy pipeline of AKS using Managed Identites
 
 ```
 
-# AKS Stack module
-
-- For executing scripts set working directory to this root aks-stack folder
-- 
-
 ## Simply spin up AKS in regions
 ```
 
