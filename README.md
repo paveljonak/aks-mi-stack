@@ -1,4 +1,4 @@
-# AKS with MI (Managed Identity) Deployment Guideline
+# Azure Kubernetes Service (AKS) with Managed Identity (MI) Deployment Guideline
 
 ## Why Managed Identity AKS
 
@@ -48,9 +48,6 @@ The focus is on deploy pipeline of AKS using Managed Identites
 
 # AKS Test in West Europe
 ./infra/aks-deploy-full-stack.sh .test.we.blue
-
-# AKS Sint in West Europe
-./infra/aks-deploy-full-stack.sh .sint.we.blue
 
 # AKS Prod in West Europe
 ./infra/aks-deploy-full-stack.sh .prod.we.blue
