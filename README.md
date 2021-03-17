@@ -3,7 +3,7 @@
 ## Why Managed Identity AKS
 
 <p>
-Currently, an Azure Kubernetes Service (AKS) cluster (specifically, the Kubernetes cloud provider) requires an identity to create additional resources like load balancers and managed disks in Azure. This identity can be either a managed identity or a service principal. If you use a service principal, you must either provide one or AKS creates one on your behalf. If you use managed identity, this will be created for you by AKS automatically. Clusters using service principals eventually reach a state in which the service principal must be renewed to keep the cluster working. Managing service principals adds complexity, which is why it's easier to use managed identities instead. The same permission requirements apply for both service principals and managed identities. 
+Currently, an Azure Kubernetes Service (AKS) cluster (specifically, the Kubernetes cloud provider) requires an identity to create additional resources like load balancers and managed disks in Azure. This identity can be either a managed identity or a service principal. If you use a service principal, you must either provide one or AKS creates one on your behalf. If you use managed identity, this will be created for you by AKS automatically. Clusters using service principals eventually reach a state in which the service principal must be renewed to keep the cluster working. Managing service principals adds complexity, which is why it's easier to use managed identities instead. The same permission requirements apply for both service principals and managed identities.
 </br>
 
 Managed identities are essentially a wrapper around service principals, and make their management simpler. Credential rotation for MI happens automatically every 46 days according to Azure Active Directory default. AKS uses both system-assigned and user-assigned managed identity types. These identities are currently immutable. To learn more, read about managed identities for Azure resources.
@@ -11,7 +11,7 @@ Managed identities are essentially a wrapper around service principals, and make
 
 - https://docs.microsoft.com/cs-cz/azure/aks/use-managed-identity
 
-## Module description 
+## Module description
 
 ### Scope
 
@@ -22,19 +22,19 @@ The focus is on deploy pipeline of AKS using Managed Identites
 ### How to use this module
 - Base working directory path for correct execution of scripts is in root (aks-stack folder)
 - Each deployment script needs to be run with path to configuration file (e.g.  .env-blue-dev file).
-- Each deployment script use same configuration file for same setup. 
+- Each deployment script uses same configuration file for same setup.
 
 ```
 # Run this to deploy prerequisites for AKS
-# This step try to check and create all missing resources related to AKS.
+# This step tries to check and create all missing resources related to AKS.
 ./infra/aks-deploy-prerequisites.sh .env-dev-blue
 
 # Run this to deploy ARM AKS template
-# This step try to deploy ARM template as AKS resource deployment.
+# This step tries to deploy ARM template as AKS resource deployment.
 ./infra/aks-deploy-arm.sh .env-dev-blue
 
 # Run this to deploy role assignment for resources managed by AKS
-# This step try to deploy and set all roles for all related resources
+# This step tries to deploy and set all roles for all related resources
 # It has to be executed after AKS is created - need to read MI profile and its principal IDs.
 ./infra/aks-deploy-role-assignment.sh .env-dev-blue
 
@@ -63,18 +63,16 @@ The focus is on deploy pipeline of AKS using Managed Identites
 
 ```
 
-
-
 ### Naming convention for Azure resources in script and ARM template:
 ```
 # Naming convention
-     [ProjectName][Delimiter][Environemnt][Delimiter][AzureLocationShowrt][Delimiter][AKSResourceName][Delimiter][SlotName] 
+     [ProjectName][Delimiter][Environemnt][Delimiter][AzureLocationShowrt][Delimiter][AKSResourceName][Delimiter][SlotName]
 ```
-### Multiple level configuration 
+### Multiple level configuration
 
 
 - .env-cfg-file - This file contains soft parameters for everyday basic operations, assuming that it can be modified frequently
-- azuredeploy.parameters.json - In this file is possible to set parameters for advanced configuration e.g. 
+- azuredeploy.parameters.json - In this file is possible to set parameters for advanced configuration e.g.
     - Fully adjustable Network Profile
     - System node pool (Mode=System) (e.g. size, scaling, subnet)
     - User node pool (Mode=User) (e.g. size, scaling, subnet)
@@ -85,29 +83,29 @@ NOTE: ARM template used in this module only allow creating new pools and customi
 ## Prerequisites
 
 ### Related resources
-- AKS use lot of resources linked to itself. This module is able to create the most of them, but ofcourse it is possible to use already existing resources (Check compatibility before e.g. Load Balancer SKU )
+- AKS uses lot of resources linked to itself. This module is able to create the most of them, but of course it is possible to use already existing resources (Check compatibility before e.g. Load Balancer SKU )
 - All related resources are in same subscription
 
 #### Related resources and its creation not supported by this deployment module
-- ACR 
-    - Always use existing resource.
+- ACR
+    - Always uses existing resource.
     - AKS is joined only with AcrPull role by MI kubelet identity ID.
 #### Related resources and its creation supported by this deployment module
-- vNet & AKS Subnet 
-    - Identified by Name and Resource group name. In case this resource does not exists moudle create it. (Default Resource Group is same as group for AKS resource)
+- vNet & AKS Subnet
+    - Identified by Name and Resource group name. In case this resource does not exist module creates it. (Default Resource Group is same as group for AKS resource)
     - Check RBAC integration section for more info about roles for this resource.
-- Public static IP 
-    - Identified by Name and Resource group name. In case this resource does not exists moudle create it. 
-    - Check RBAC integration section for more info about roles for this resource.    
+- Public static IP
+    - Identified by Name and Resource group name. In case this resource does not exist module creates it.
+    - Check RBAC integration section for more info about roles for this resource.
     - Be sure that SKUs of IP and AKS LB is same
 - Log Analytics Workspace
-    - Identified by Name and Resource group name. In case this resource does not exists moudle create it
+    - Identified by Name and Resource group name. In case this resource does not exist module creates it
     - Check RBAC integration section for more info about roles for this resource.
 
 
 ### Linux shell with working az cli connection into azure
 
-az cli version with support zero base index in ARM templates 
+az cli version with support zero base index in ARM templates
 
 ```
 $ az version
@@ -136,22 +134,22 @@ For AKS AAD integration is used ID of group. To this Admin groups is possible to
 
 #### Role types and different kind of role usage
 
-- Roles in minimum needed variant are different in first spinning up AKS, or adjusting existing ono later. This is aks deployment flow according to RBAC needs.
+- Roles in minimum needed variant are different in first spinning up AKS, or adjusting existing one later. This is aks deployment flow according to RBAC needs.
 
 **Deploy AKS prerequisites on green field**
 
 Let's say we just have nothing and what roles we need to achieve these individual steps with different role needs?
-- Create Resource Group for AKS home 
+- Create Resource Group for AKS home
     - **Role**: Contributor on Subscription
-- Create Resource Group for vNet 
-    - **Role**: Contributor on Subscription    
+- Create Resource Group for vNet
+    - **Role**: Contributor on Subscription
         - Create vNet for AKS
-            - **Role**: Network Contributor on Resource Group conaining vNet for AKS    
+            - **Role**: Network Contributor on Resource Group containing vNet for AKS
 - Create Resource Group for public IP (if not exists, or dont want to use any other - Manageable via configuration)
     - **Role**: Contributor on Subscription
-        - Create Public Static IP 
-            - **Role**: Network Contributor on Resource Group conaining Public Static IP            
-- Create Resource Group for Log Analytics Workspace (if not exists, or dont want to use any other -Manageable via configuration) 
+        - Create Public Static IP
+            - **Role**: Network Contributor on Resource Group containing Public Static IP
+- Create Resource Group for Log Analytics Workspace (if not exists, or dont want to use any other -Manageable via configuration)
     - **Role**: Contributor on Subscription
         - Create Log Analytics
             - Log Analytics Contributor
@@ -184,7 +182,7 @@ Last step is to setup all necessary roles for AKS for managing resources by itse
 <tr>
     <td>Create VNet for AKS</td> <td>Microsoft.Network/virtualNetworks/write</td> <td>Network Contributor - on AKS home esource group</td>
 </tr>
-<tr>    
+<tr>
     <td>Create AKS</td> <td>Microsoft.ContainerService/managedClusters/write</td> <td>Azure Kubernetes Service Contributor Role - on AKS home esource group</td>
 </tr>
 <tr>
@@ -193,7 +191,7 @@ Last step is to setup all necessary roles for AKS for managing resources by itse
 <tr>
     <td>Create Role Assignment for resources managed by AKS (vNet,Subnet,ACR,Logs etc.)</td> <td>Microsoft.Authorization/roleAssignments/write</td> <td>User Access Administrator - on resource groups or individual resources wants to be managed by AKS </td>
 
-    
+
 </tr>
 </table>
 
